@@ -1,0 +1,9 @@
+.container{
+  height: 100vh;
+  padding: 12px;
+}
+
+.message-container{
+  flex: 1;
+  overflow: auto;
+}
