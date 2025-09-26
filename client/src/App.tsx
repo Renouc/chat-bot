@@ -70,22 +70,29 @@ function App() {
             },
           ])
 
-          fetch(`/api/generate?message=${encodeURIComponent(message)}`)
-            .then((res) => res.text())
-            .then((data) => {
-              setMessageList((prev) =>
-                prev.map((item, index) =>
-                  index === prev.length - 1
-                    ? {
-                        ...item,
-                        content: data,
-                        loading: false,
-                      }
-                    : item
+          fetch(`/api/generate?message=${encodeURIComponent(message)}`).then(
+            async (res) => {
+              // 创建一个解码器
+              const decoder = new TextDecoder('utf-8')
+              const reader = res.body!.getReader()
+              while (true) {
+                const { done, value } = await reader!.read()
+                if (done) break
+                const text = decoder.decode(value, { stream: true })
+                setMessageList((prev) =>
+                  prev.map((item, index) =>
+                    index === prev.length - 1
+                      ? {
+                          ...item,
+                          content: item.content + text,
+                          loading: false,
+                        }
+                      : item
+                  )
                 )
-              )
-              console.log('data:', data)
-            })
+              }
+            }
+          )
         }}
         onCancel={(...args) => {
           console.log('args', args)
