@@ -3,6 +3,7 @@ import { UserOutlined } from '@ant-design/icons'
 import { Card, Flex } from 'antd'
 import styles from './App.module.css'
 import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 
 const fooAvatar: React.CSSProperties = {
   color: '#f56a00',
@@ -40,7 +41,11 @@ function App() {
               key={index}
               placement={message.placement}
               loading={message.loading}
-              content={message.content}
+              content={
+                <div className={styles['markdown-body']}>
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </div>
+              }
               avatar={{
                 icon: <UserOutlined />,
                 style: message.placement === 'start' ? fooAvatar : barAvatar,
