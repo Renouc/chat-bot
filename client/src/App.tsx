@@ -75,7 +75,7 @@ function App() {
             },
           ])
 
-          fetch(`/api/generate?message=${encodeURIComponent(message)}`).then(
+          fetch(`/api/chat?message=${encodeURIComponent(message)}`).then(
             async (res) => {
               // 创建一个解码器
               const decoder = new TextDecoder('utf-8')
