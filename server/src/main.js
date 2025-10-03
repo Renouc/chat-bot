@@ -1,5 +1,8 @@
 import express from 'express'
 import ollama from 'ollama'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const app = express()
 
@@ -50,6 +53,76 @@ app.get('/api/chat', async (req, res) => {
 
     // 6. 结束流
     res.end()
+  } catch (err) {
+    console.error(err)
+    res.end('出错了')
+  }
+})
+
+app.get('/api/v2/chat', async (req, res) => {
+  const message = req.query.message
+
+  // 1. 把用户消息加到历史
+  messages.push({ role: 'user', content: message })
+
+  // 2. 设置响应为 SSE（流式）
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+
+  try {
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages,
+        stream: true,
+      }),
+    })
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder('utf-8')
+    let fullResponse = ''
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      // 按行拆分
+      const lines = buffer.split('\n')
+      buffer = lines.pop() // 保留最后一行，可能不完整
+
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue
+        const dataStr = line.substring(5).trim()
+        if (dataStr === '[DONE]') {
+          res.end()
+          messages.push({ role: 'assistant', content: fullResponse })
+          return
+        }
+
+        try {
+          const data = JSON.parse(dataStr)
+          const content = data?.choices?.[0]?.delta?.content
+          if (content) {
+            res.write(content)
+            fullResponse += content
+          }
+        } catch (e) {
+          console.error('JSON parse error:', e, 'line:', line)
+        }
+      }
+    }
+
+    // 结束流
+    res.end()
+    messages.push({ role: 'assistant', content: fullResponse })
   } catch (err) {
     console.error(err)
     res.end('出错了')

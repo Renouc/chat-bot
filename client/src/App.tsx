@@ -75,7 +75,7 @@ function App() {
             },
           ])
 
-          fetch(`/api/chat?message=${encodeURIComponent(message)}`).then(
+          fetch(`/api/v2/chat?message=${encodeURIComponent(message)}`).then(
             async (res) => {
               // 创建一个解码器
               const decoder = new TextDecoder('utf-8')
@@ -84,6 +84,8 @@ function App() {
                 const { done, value } = await reader!.read()
                 if (done) break
                 const text = decoder.decode(value, { stream: true })
+                console.log('text:', text)
+
                 setMessageList((prev) =>
                   prev.map((item, index) =>
                     index === prev.length - 1
